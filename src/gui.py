@@ -152,15 +152,18 @@ class Gui:
     def print_body_properties(self):
         body = self.selected_body  # type: Body
         bname = self.bfont.render(body.name, True, body.color)
-        masstxt = self.cfont.render(f'Mass: {body.mass}Kg', True, (210, 210, 210))
+        masstxt = self.cfont.render(f'Mass: {body.mass} Kg', True, (210, 210, 210))
         xpostxt = self.cfont.render(f'Position X: {body.posx}', True, (210, 210, 210))
         ypostxt = self.cfont.render(f'Position Y: {body.posy}', True, (210, 210, 210))
-        xvelo = self.cfont.render(f'Velocity X: {body.velocity.x}', True, (210, 210, 210))
-        yvelo = self.cfont.render(f'Velocity Y: {body.velocity.y}', True, (210, 210, 210))
+        xvelo = self.cfont.render(f'Velocity X: {body.velocity.x:.3f} m/s', True, (210, 210, 210))
+        yvelo = self.cfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, (210, 210, 210))
+        velocity_total = (body.velocity.x ** 2 + body.velocity.y ** 2) ** 0.5
+        totvelo = self.cfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, (210, 210, 210))
         self.screen.blit(bname, (10, 26,))
         self.screen.blit(masstxt, (10, 45,))
         self.screen.blit(xpostxt, (10, 60,))
         self.screen.blit(ypostxt, (10, 75,))
         self.screen.blit(xvelo, (10, 90,))
         self.screen.blit(yvelo, (10, 105,))
+        self.screen.blit(totvelo, (10, 120,))
 
