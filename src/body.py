@@ -19,6 +19,7 @@ class Body:
         self._previous_pos = []
         self.velocity_change = []
         self.radius = 2
+        self.selected = False
 
     def __str__(self) -> str:
         return f"[{self.name}] position: ({self.posx / UA}, {self.posy / UA}), velocity: ({self.velocity.x} km/s, {self.velocity.y} km/s)"

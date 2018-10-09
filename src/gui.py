@@ -1,4 +1,5 @@
 import pygame as pg
+import math
 from src.constants import *
 from src.globals import GL
 from src.body import Body
@@ -19,8 +20,10 @@ class Gui:
         self.screen = pg.display.set_mode(WINDOW_SIZE)
         self.clock = pg.time.Clock()
         self.bodies = bodies
+        self.selected_body = None
         self.bcolor = STRING_COLORS['BLACK']
         self.cfont = pg.font.SysFont("calibri", 12)
+        self.bfont = pg.font.SysFont("calibri", 16, bold=True)
         self.speed_text = self._compute_speed_text()
 
     def start(self) -> None:
@@ -42,7 +45,14 @@ class Gui:
                         self.timescale_faster()
                     elif event.key == pg.K_MINUS or event.key == pg.K_KP_MINUS:
                         self.timescale_slower()
+                elif event.type == pg.MOUSEBUTTONUP:
+                    clickpos = pg.mouse.get_pos()
+                    if event.button == 1: # Left click
+                        self.select_closest_body(clickpos[0], clickpos[1])
+                    elif event.button == 3: # Right click
+                        pass
 
+            self.selected_body = None
             for i in range(0, len(self.bodies)):
                 for j in range(0, len(self.bodies)):
                     if i != j:
@@ -55,27 +65,48 @@ class Gui:
             if DRAW_GRAVITATIONAL_FORCES:
                 self._draw_gravitational_forces()
             self._draw_bodies()
+            if self.selected_body:
+                self.print_body_properties()
             self._draw_speed_text()
             pg.display.flip()
             self.clock.tick(FRAME_RATE)
         pg.quit()
 
+
+    def select_closest_body(self, x: int, y: int):
+        min_dist = None
+        min_index = -1
+        for i in range(len(self.bodies)):
+            body = self.bodies[i]
+            body.selected = False
+            bpos = self._real_to_screen(body.posx, body.posy)
+            dist = ((x - bpos[0]) ** 2 + (y - bpos[1]) ** 2) ** 0.5
+            if min_dist is None or dist < min_dist:
+                min_dist = dist
+                min_index = i
+        if min_dist <= 10.0:
+            self.bodies[min_index].selected = True
+
+
     def _draw_bodies(self):
         for body in self.bodies:
-            pos = self._get_screen_position(body.posx, body.posy)
+            pos = self._real_to_screen(body.posx, body.posy)
             pg.draw.circle(self.screen, body.color, pos, body.radius)
+            if body.selected:
+                self.draw_ngon(8, body.radius + 4, pos, math.pi / 16)
+                self.selected_body = body
 
     def _draw_ghost(self):
         for body in self.bodies:
             for i in range(0, len(body._previous_pos) - 1):
-                p1 = self._get_screen_position(body._previous_pos[i][0], body._previous_pos[i][1])
-                p2 = self._get_screen_position(body._previous_pos[i+1][0], body._previous_pos[i+1][1])
+                p1 = self._real_to_screen(body._previous_pos[i][0], body._previous_pos[i][1])
+                p2 = self._real_to_screen(body._previous_pos[i + 1][0], body._previous_pos[i + 1][1])
                 pg.draw.line(self.screen, body.color, p1, p2)
 
     def _draw_gravitational_forces(self):
         for body in self.bodies:
             for force in body.velocity_change:
-                p1 = self._get_screen_position(body.posx, body.posy)
+                p1 = self._real_to_screen(body.posx, body.posy)
                 p2 = p1[0] + int(force.x * 5000), p1[1] + int(force.y * 5000)
                 pg.draw.aaline(self.screen, (255, 255, 255), p1, p2)
 
@@ -83,32 +114,53 @@ class Gui:
         text = self.cfont.render(self.speed_text, True, (210, 210, 210))
         self.screen.blit(text, (10, 10,))
 
+    def draw_ngon(self, n: int, radius: int, position: Tuple[float, float], tiltAngle: float):
+        pi2 = 2 * math.pi
+        color = (255, 255, 255)
+        pts = []
+        for i in range(n):
+            x = position[0] + radius * math.cos(tiltAngle + pi2 * i / n)
+            y = position[1] + radius * math.sin(tiltAngle + pi2 * i / n)
+            pts.append([int(x), int(y)])
+        pg.draw.lines(self.screen, color, True, pts)
+
     def timescale_faster(self):
         if GL.CURRENT_SPEED >= len(GL.SPEEDS) - 1:
             return
         GL.CURRENT_SPEED += 1
-        GL.TIMESCALE = GL.SPEEDS[GL.CURRENT_SPEED]
+        GL.TIMESCALE = GL.get_speed()
         self.speed_text = self._compute_speed_text()
 
     def timescale_slower(self):
         if GL.CURRENT_SPEED <= 0:
             return
         GL.CURRENT_SPEED -= 1
-        GL.TIMESCALE = GL.SPEEDS[GL.CURRENT_SPEED]
+        GL.TIMESCALE = GL.get_speed()
         self.speed_text = self._compute_speed_text()
 
     def _compute_speed_text(self) -> str:
         speed_mult = int(round(GL.TIMESCALE * FRAME_RATE))
         return f"Speed: {speed_mult:,}X"
 
-    def _get_screen_position(self, x: float, y: float) -> Tuple[int, int]:
+    def _real_to_screen(self, x: float, y: float) -> Tuple[int, int]:
         xp = int(x * GL.SCALE)
         yp = int(y * GL.SCALE)
         xp += WINDOW_SIZE[0] // 2
         yp += WINDOW_SIZE[1] // 2
         return (xp, yp,)
 
-
-
-
+    def print_body_properties(self):
+        body = self.selected_body  # type: Body
+        bname = self.bfont.render(body.name, True, body.color)
+        masstxt = self.cfont.render(f'Mass: {body.mass}Kg', True, (210, 210, 210))
+        xpostxt = self.cfont.render(f'Position X: {body.posx}', True, (210, 210, 210))
+        ypostxt = self.cfont.render(f'Position Y: {body.posy}', True, (210, 210, 210))
+        xvelo = self.cfont.render(f'Velocity X: {body.velocity.x}', True, (210, 210, 210))
+        yvelo = self.cfont.render(f'Velocity Y: {body.velocity.y}', True, (210, 210, 210))
+        self.screen.blit(bname, (10, 26,))
+        self.screen.blit(masstxt, (10, 45,))
+        self.screen.blit(xpostxt, (10, 60,))
+        self.screen.blit(ypostxt, (10, 75,))
+        self.screen.blit(xvelo, (10, 90,))
+        self.screen.blit(yvelo, (10, 105,))
 

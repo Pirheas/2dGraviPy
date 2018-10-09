@@ -1,11 +1,18 @@
+from typing import  List
 from src.body import Body
 from src.gui import Gui
 from src.constants import *
 
 
 def main():
+    bodies = generate_solar_system()
+    g = Gui(bodies)
+    g.start()
+
+
+def generate_solar_system() -> List[Body]:
     bodies = []
-    sun = Body('Sun', 1.9885e30, 0, 0, 0, 0, 'YELLOW')
+    sun = Body('Sun', 1.9885e30, 0, 0, -12.5, 0, 'YELLOW')
     sun.radius = 8
     bodies.append(sun)
     bodies.append(Body('Earth', 5.9736e24, UA, 0, 0, -29_763, 'LIGHT_BLUE'))
@@ -14,8 +21,7 @@ def main():
     bodies[-1].radius = 4
     bodies.append(Body('Venus', 4.8685e24, 0, -108_208_930_000, -35_020.0, 0, 'PINK'))
     bodies.append(Body('Mercury', 3.3011e23, 57_909_176_000, 0, 0, -47_360, 'LIGHT_GREEN'))
-    g = Gui(bodies)
-    g.start()
+    return bodies
 
 if __name__ == "__main__":
     main()
