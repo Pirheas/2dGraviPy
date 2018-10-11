@@ -1,7 +1,7 @@
 import math
-from src.constants import *
-from src.globals import GL
-from src.vector import Vector
+from constants import *
+from globals import GL
+from vector import Vector
 from typing import Union, Tuple
 
 
@@ -39,21 +39,22 @@ class Body:
             print(f"'{other.name}' applies a force: [{force}]({dx}, {dy})  on '{self.name}'")
         self._forces_applied.append(Vector(dx, dy))
 
-    def update_positon(self) -> None:
+    def update_positon(self, save_prev_pos:bool=False) -> None:
         if PRINT_DEBUG:
             print(f"UPDATE POSITION: {self.name}")
             print(str(self))
-        self._previous_pos.append((self.posx, self.posy))
-        if len(self._previous_pos) > MAX_PREV_POS:
-            self._previous_pos.pop(0)
+        if save_prev_pos:
+            self._previous_pos.append((self.posx, self.posy))
+            if len(self._previous_pos) > MAX_PREV_POS:
+                self._previous_pos.pop(0)
         self.velocity_change.clear()
         for f in self._forces_applied:
-            vel_change = Vector(f.x * GL.TIMESCALE / self.mass, f.y * GL.TIMESCALE / self.mass)
+            vel_change = Vector(f.x * GL.INNER_TIMESCALE / self.mass, f.y * GL.INNER_TIMESCALE / self.mass)
             self.velocity_change.append(vel_change)
             self.velocity += vel_change
         self._forces_applied = []
-        self.posx += self.velocity.x * GL.TIMESCALE
-        self.posy += self.velocity.y * GL.TIMESCALE
+        self.posx += self.velocity.x * GL.INNER_TIMESCALE
+        self.posy += self.velocity.y * GL.INNER_TIMESCALE
         if PRINT_DEBUG:
             print("NEW POSITION:", str(self))
 

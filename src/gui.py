@@ -1,8 +1,8 @@
 import pygame as pg
 import math
-from src.constants import *
-from src.globals import GL
-from src.body import Body
+from constants import *
+from globals import GL
+from body import Body
 from typing import  List, Tuple
 
 if not PYGAME_INIT:
@@ -53,12 +53,13 @@ class Gui:
                         pass
 
             self.selected_body = None
-            for i in range(0, len(self.bodies)):
-                for j in range(0, len(self.bodies)):
-                    if i != j:
-                        self.bodies[i].compute_gravity(self.bodies[j])
-            for body in self.bodies:
-                body.update_positon()
+            for fc in range(GL.FRAME_COMPUTE):
+                for i in range(0, len(self.bodies)):
+                    for j in range(0, len(self.bodies)):
+                        if i != j:
+                            self.bodies[i].compute_gravity(self.bodies[j])
+                for body in self.bodies:
+                    body.update_positon(fc == GL.FRAME_COMPUTE - 1)
             self.screen.fill(self.bcolor)
             if DRAW_GHOST_LINE:
                 self._draw_ghost()
@@ -128,14 +129,14 @@ class Gui:
         if GL.CURRENT_SPEED >= len(GL.SPEEDS) - 1:
             return
         GL.CURRENT_SPEED += 1
-        GL.TIMESCALE = GL.get_speed()
+        GL.update_speed()
         self.speed_text = self._compute_speed_text()
 
     def timescale_slower(self):
         if GL.CURRENT_SPEED <= 0:
             return
         GL.CURRENT_SPEED -= 1
-        GL.TIMESCALE = GL.get_speed()
+        GL.update_speed()
         self.speed_text = self._compute_speed_text()
 
     def _compute_speed_text(self) -> str:
