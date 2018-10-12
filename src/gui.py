@@ -8,6 +8,7 @@ from typing import  List, Tuple
 if not PYGAME_INIT:
     PYGAME_INIT = True
     pg.init()
+    pg.display.set_caption('2dGraviPy')
 
 WINDOW_SIZE = (1300, 1000,)
 DRAW_GHOST_LINE = False
@@ -22,8 +23,8 @@ class Gui:
         self.bodies = bodies
         self.selected_body = None
         self.bcolor = STRING_COLORS['BLACK']
-        self.cfont = pg.font.SysFont("calibri", 12)
-        self.bfont = pg.font.SysFont("calibri", 16, bold=True)
+        self.cfont = pg.font.SysFont("calibri", 13)
+        self.bfont = pg.font.SysFont("calibri", 17, bold=True)
         self.speed_text = self._compute_speed_text()
 
     def start(self) -> None:
@@ -45,6 +46,8 @@ class Gui:
                         self.timescale_faster()
                     elif event.key == pg.K_MINUS or event.key == pg.K_KP_MINUS:
                         self.timescale_slower()
+                    elif event.key == pg.K_s:
+                        GL.DRAW_SCALE = not GL.DRAW_SCALE
                 elif event.type == pg.MOUSEBUTTONUP:
                     clickpos = pg.mouse.get_pos()
                     if event.button == 1: # Left click
@@ -61,6 +64,8 @@ class Gui:
                 for body in self.bodies:
                     body.update_positon(fc == GL.FRAME_COMPUTE - 1)
             self.screen.fill(self.bcolor)
+            if GL.DRAW_SCALE:
+                self.draw_scale()
             if DRAW_GHOST_LINE:
                 self._draw_ghost()
             if DRAW_GRAVITATIONAL_FORCES:
@@ -160,11 +165,25 @@ class Gui:
         yvelo = self.cfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, (210, 210, 210))
         velocity_total = (body.velocity.x ** 2 + body.velocity.y ** 2) ** 0.5
         totvelo = self.cfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, (210, 210, 210))
-        self.screen.blit(bname, (10, 26,))
-        self.screen.blit(masstxt, (10, 45,))
-        self.screen.blit(xpostxt, (10, 60,))
-        self.screen.blit(ypostxt, (10, 75,))
-        self.screen.blit(xvelo, (10, 90,))
-        self.screen.blit(yvelo, (10, 105,))
-        self.screen.blit(totvelo, (10, 120,))
+        self.screen.blit(bname, (10, 28,))
+        self.screen.blit(masstxt, (10, 49,))
+        self.screen.blit(xpostxt, (10, 66,))
+        self.screen.blit(ypostxt, (10, 81,))
+        self.screen.blit(xvelo, (10, 98,))
+        self.screen.blit(yvelo, (10, 115,))
+        self.screen.blit(totvelo, (10, 132,))
+
+    def draw_scale(self):
+        ref_length = 250
+        color = (210, 210, 210)
+        start_pos, end_pos = (10, WINDOW_SIZE[1] - (ref_length + 20)), (10, WINDOW_SIZE[1] - 20)
+        pg.draw.line(self.screen, color, start_pos, end_pos)
+        pg.draw.line(self.screen, color, start_pos, (start_pos[0] + 10, start_pos[1]))
+        pg.draw.line(self.screen, color, end_pos, (end_pos[0] + 10, end_pos[1]))
+        scale = (ref_length / GL.SCALE) / 1000
+        scale_ua = (scale * 1000) / UA
+        scale_text = self.cfont.render(f'{scale:,.4f} Km', True, color)
+        scale_ua_text = self.cfont.render(f'{scale_ua:,.3f} UA', True, color)
+        self.screen.blit(scale_text, (start_pos[0], start_pos[1] - 35,))
+        self.screen.blit(scale_ua_text, (start_pos[0], start_pos[1] - 18,))
 

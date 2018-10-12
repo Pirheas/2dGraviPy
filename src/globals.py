@@ -3,6 +3,7 @@ from constants import *
 class Globals:
     def __init__(self):
         self.SCALE = 90 / UA  # (90px == 1 UA)
+        self.DRAW_SCALE = False
         self.SPEEDS = [
             (1_000, 2),
             (5_000, 4),

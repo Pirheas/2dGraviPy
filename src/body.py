@@ -8,7 +8,7 @@ from typing import Union, Tuple
 class Body:
 
     def __init__(self, name: str, mass: float, posx: float, posy: float, velx: float, vely: float,
-                 color: Union[str, Tuple[int, int , int], None]):
+                 color: Union[str, Tuple[int, int , int], None], radius:int=2):
         self.name = name
         self.mass = mass
         self.posx = posx
@@ -18,7 +18,7 @@ class Body:
         self._forces_applied = []
         self._previous_pos = []
         self.velocity_change = []
-        self.radius = 2
+        self.radius = radius
         self.selected = False
 
     def __str__(self) -> str:

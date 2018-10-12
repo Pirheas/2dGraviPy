@@ -19,12 +19,14 @@ python main.py
 
 ## Commands
 
-| Key | Action  |
-|-----|---------|
-|  +  | Speed up|
-|  -  | Speed down|
-|  F  | Draw line of force applied on each body|
-|  G  | Draw the ghost of the bodies (prefious positions)|
+| Key        | Action  |
+|------------|---------|
+|      +     | Speed up|
+|      -     | Speed down|
+|      F     | Draw line of force applied on each body|
+|      G     | Draw the ghost of the bodies (prefious positions)|
+|      S     | Show the scale in the bottom left corner |
+| Left click | Select an object and show the info about it |
 
 ##  Preview
 
