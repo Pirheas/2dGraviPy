@@ -21,6 +21,7 @@ def generate_solar_system() -> List[Body]:
     bodies.append(Body('Jupiter', 1.8986e27, 0, 778_412_027_000, 13_057.2, 0, 'ORANGE', 4))
     bodies.append(Body('Venus', 4.8685e24, 0, -108_208_930_000, -35_020.0, 0, 'PINK'))
     bodies.append(Body('Mercury', 3.3011e23, 57_909_176_000, 0, 0, -47_360, 'LIGHT_GREEN'))
+    bodies.append(Body('Moon', 7.3476731e22, UA, -384_400_000, -1_022, -29_763, 'LIGHT_GREY', 1))
     return bodies
 
 def generate_pluto_system() -> List[Body]:

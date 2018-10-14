@@ -28,6 +28,7 @@ python main.py
 |      V     | Toggle music |
 | Left click | Select an object and show the info about it |
 | Right click| Focus the view on the clicked body|
+| Mouse wheel| Zoom (in/out)|
 
 
 ##  Preview

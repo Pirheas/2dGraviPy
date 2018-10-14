@@ -74,6 +74,12 @@ class Gui:
                         self.select_body(clickpos[0], clickpos[1])
                     elif event.button == 3: # Right click
                         self.center_body(clickpos[0], clickpos[1])
+                    elif event.button == 4: # Wheel Down
+                        if (1 / GL.SCALE) > 30_000:
+                            GL.SCALE *= 1.1
+                    elif event.button == 5: # Wheel Upd
+                        if (1 / GL.SCALE) < 100 * UA / 250:
+                            GL.SCALE *= 0.9
 
             self.selected_body = None
             for fc in range(GL.FRAME_COMPUTE):
@@ -129,7 +135,7 @@ class Gui:
         return self.bodies[min_index]
 
     def _draw_bodies(self):
-        for body in self.bodies:
+        for body in sorted(self.bodies, key=lambda b: b.mass):
             pos = self._real_to_screen(body.posx, body.posy)
             pg.draw.circle(self.screen, body.color, pos, body.radius)
             if body.selected:
@@ -137,7 +143,7 @@ class Gui:
                 self.selected_body = body
 
     def _draw_ghost(self):
-        for body in self.bodies:
+        for body in sorted(self.bodies, key=lambda b: b.mass):
             for i in range(0, len(body._previous_pos) - 1):
                 p1 = self._real_to_screen(body._previous_pos[i][0], body._previous_pos[i][1])
                 p2 = self._real_to_screen(body._previous_pos[i + 1][0], body._previous_pos[i + 1][1])
