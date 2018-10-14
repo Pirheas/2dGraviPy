@@ -11,7 +11,7 @@ if not PYGAME_INIT:
     pg.init()
     pg.display.set_caption('2dGraviPy')
 
-WINDOW_SIZE = (1300, 1000,)
+DEFAULT_WINDOW_SIZE = (1300, 1000,)
 DRAW_GHOST_LINE = False
 
 
@@ -19,7 +19,7 @@ class Gui:
 
     def __init__(self, bodies: List[Body]):
         self.exit = False
-        self.screen = pg.display.set_mode(WINDOW_SIZE)
+        self.screen = pg.display.set_mode(DEFAULT_WINDOW_SIZE, pg.RESIZABLE)
         self.clock = pg.time.Clock()
         self.bodies = bodies
         self.selected_body = None
@@ -47,6 +47,11 @@ class Gui:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self.exit = True
+                if event.type == pg.VIDEORESIZE:
+                    width, height = event.size
+                    width = max(700, width)
+                    height = max(600, height)
+                    self.screen = pg.display.set_mode((width, height), pg.RESIZABLE)
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_SPACE:
                         for body in self.bodies:
@@ -184,8 +189,8 @@ class Gui:
             relative_pos = (GL.FOCUS_BODY.posx, GL.FOCUS_BODY.posy)
         xp = int((x - relative_pos[0]) * GL.SCALE)
         yp = int((y - relative_pos[1]) * GL.SCALE)
-        xp += WINDOW_SIZE[0] // 2
-        yp += WINDOW_SIZE[1] // 2
+        xp += self.screen.get_width() // 2
+        yp += self.screen.get_height() // 2
         return (xp, yp,)
 
     def print_body_properties(self):
@@ -209,7 +214,7 @@ class Gui:
     def draw_scale(self):
         ref_length = 250
         color = (210, 210, 210)
-        start_pos, end_pos = (10, WINDOW_SIZE[1] - (ref_length + 26)), (10, WINDOW_SIZE[1] - 26)
+        start_pos, end_pos = (10, self.screen.get_height() - (ref_length + 26)), (10, self.screen.get_height() - 26)
         pg.draw.line(self.screen, color, start_pos, end_pos)
         pg.draw.line(self.screen, color, start_pos, (start_pos[0] + 10, start_pos[1]))
         pg.draw.line(self.screen, color, end_pos, (end_pos[0] + 10, end_pos[1]))
@@ -227,8 +232,8 @@ class Gui:
         focus_render = self.bfont.render(focus_text, True, focus_color)
         label_render = self.cfont.render(label_text, True, (210, 210, 210,))
         focus_rect = focus_render.get_rect()
-        label_pos = ( WINDOW_SIZE[0] - 12 - focus_rect[2] - label_render.get_rect()[2] , 16)
-        focus_pos = (WINDOW_SIZE[0] - 12 - focus_rect[2], 15)
+        label_pos = (self.screen.get_width() - 12 - focus_rect[2] - label_render.get_rect()[2] , 16)
+        focus_pos = (self.screen.get_width() - 12 - focus_rect[2], 15)
         self.screen.blit(label_render, label_pos)
         self.screen.blit(focus_render, focus_pos)
 
@@ -237,7 +242,7 @@ class Gui:
             rtext = self.cfont.render('Music: On', True, (210, 210, 210))
         else:
             rtext = self.cfont.render('Music: Off', True, (210, 210, 210))
-        self.screen.blit(rtext, (10, WINDOW_SIZE[1] - 18))
+        self.screen.blit(rtext, (10, self.screen.get_height() - 18))
 
     def change_music_state(self):
         GL.PLAY_SOUND = not GL.PLAY_SOUND
