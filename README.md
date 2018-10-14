@@ -2,8 +2,7 @@
 
 Simple 2d gravity simulator using PyGame
 
-Simulate the newtonian gravity laws. By default, it simulate the Sun, Mercury, Venus, Earth, Mars and Jupiter 
-with the real values (the starting position is not accurate, only the distance from the sun, the mass & the initial speed are)
+Simulate the newtonian gravity laws. 
 
 ## Requirements:
 
@@ -26,8 +25,15 @@ python main.py
 |      F     | Draw line of force applied on each body|
 |      G     | Draw the ghost of the bodies (prefious positions)|
 |      S     | Show the scale in the bottom left corner |
+|      V     | Toggle music |
 | Left click | Select an object and show the info about it |
+| Right click| Focus the view on the clicked body|
+
 
 ##  Preview
 
+Solar system:
 ![Screenshot](preview/sample.gif)
+
+Dual stars system
+![Screenshot](preview/sample2.gif)

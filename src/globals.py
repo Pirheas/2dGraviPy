@@ -5,6 +5,7 @@ class Globals:
         self.SCALE = 90 / UA  # (90px == 1 UA)
         self.DRAW_SCALE = False
         self.SPEEDS = [
+            (1, 1),
             (1_000, 2),
             (5_000, 4),
             (10_000, 8),
@@ -17,9 +18,12 @@ class Globals:
             (2_500_000, 64),
             (5_000_000, 82),
             (10_000_000, 96),
-            (25_000_000, 124)
+            (25_000_000, 128),
+            (50_000_000, 256)
         ]
         self.CURRENT_SPEED = len(self.SPEEDS) // 2
+        self.FOCUS_BODY = None
+        self.PLAY_SOUND = False
         self.update_speed()
 
     def update_speed(self) -> None:

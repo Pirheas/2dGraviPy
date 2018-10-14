@@ -1,9 +1,10 @@
-import pygame as pg
+import sys
 import math
+import pygame as pg
 from constants import *
 from globals import GL
 from body import Body
-from typing import  List, Tuple
+from typing import  List, Tuple, Union
 
 if not PYGAME_INIT:
     PYGAME_INIT = True
@@ -22,10 +23,22 @@ class Gui:
         self.clock = pg.time.Clock()
         self.bodies = bodies
         self.selected_body = None
+        self.capture_counter = 0
+        self.load_music()
         self.bcolor = STRING_COLORS['BLACK']
         self.cfont = pg.font.SysFont("calibri", 13)
         self.bfont = pg.font.SysFont("calibri", 17, bold=True)
+        self.efont = pg.font.SysFont("calibri", 26)
         self.speed_text = self._compute_speed_text()
+
+    def load_music(self):
+        try:
+            from pathlib import Path
+            p = Path(__file__).parent.parent / 'music' / 'AmbiantSpace.ogg'
+            pg.mixer.music.load(str(p))
+            pg.mixer.music.set_volume(0.6)
+        except:
+            print("Oh oh", file=sys.stderr)
 
     def start(self) -> None:
         global DRAW_GHOST_LINE
@@ -48,12 +61,14 @@ class Gui:
                         self.timescale_slower()
                     elif event.key == pg.K_s:
                         GL.DRAW_SCALE = not GL.DRAW_SCALE
+                    elif event.key == pg.K_v:
+                        self.change_music_state()
                 elif event.type == pg.MOUSEBUTTONUP:
                     clickpos = pg.mouse.get_pos()
                     if event.button == 1: # Left click
-                        self.select_closest_body(clickpos[0], clickpos[1])
+                        self.select_body(clickpos[0], clickpos[1])
                     elif event.button == 3: # Right click
-                        pass
+                        self.center_body(clickpos[0], clickpos[1])
 
             self.selected_body = None
             for fc in range(GL.FRAME_COMPUTE):
@@ -74,25 +89,39 @@ class Gui:
             if self.selected_body:
                 self.print_body_properties()
             self._draw_speed_text()
+            self.draw_focus_info()
+            self.draw_music_info()
             pg.display.flip()
+            self.capture_img()
             self.clock.tick(FRAME_RATE)
         pg.quit()
 
 
-    def select_closest_body(self, x: int, y: int):
+    def select_body(self, x: int, y: int):
+        for body in self.bodies:
+            body.selected = False
+        closest_body = self.find_closest_body_from_position(x, y)
+        if closest_body is not None:
+            closest_body.selected = True
+
+    def center_body(self, x: int, y: int):
+        GL.FOCUS_BODY = self.find_closest_body_from_position(x, y)
+
+    def find_closest_body_from_position(self, x: int, y: int, max_allowed_dist: float=10.0) -> Union[Body, None]:
+        if len(self.bodies) < 1:
+            return None
         min_dist = None
         min_index = -1
         for i in range(len(self.bodies)):
             body = self.bodies[i]
-            body.selected = False
             bpos = self._real_to_screen(body.posx, body.posy)
             dist = ((x - bpos[0]) ** 2 + (y - bpos[1]) ** 2) ** 0.5
             if min_dist is None or dist < min_dist:
                 min_dist = dist
                 min_index = i
-        if min_dist <= 10.0:
-            self.bodies[min_index].selected = True
-
+        if min_dist > max_allowed_dist:
+            return None
+        return self.bodies[min_index]
 
     def _draw_bodies(self):
         for body in self.bodies:
@@ -148,9 +177,13 @@ class Gui:
         speed_mult = int(round(GL.TIMESCALE * FRAME_RATE))
         return f"Speed: {speed_mult:,}X"
 
+
     def _real_to_screen(self, x: float, y: float) -> Tuple[int, int]:
-        xp = int(x * GL.SCALE)
-        yp = int(y * GL.SCALE)
+        relative_pos = (0, 0,)
+        if GL.FOCUS_BODY is not None:
+            relative_pos = (GL.FOCUS_BODY.posx, GL.FOCUS_BODY.posy)
+        xp = int((x - relative_pos[0]) * GL.SCALE)
+        yp = int((y - relative_pos[1]) * GL.SCALE)
         xp += WINDOW_SIZE[0] // 2
         yp += WINDOW_SIZE[1] // 2
         return (xp, yp,)
@@ -176,7 +209,7 @@ class Gui:
     def draw_scale(self):
         ref_length = 250
         color = (210, 210, 210)
-        start_pos, end_pos = (10, WINDOW_SIZE[1] - (ref_length + 20)), (10, WINDOW_SIZE[1] - 20)
+        start_pos, end_pos = (10, WINDOW_SIZE[1] - (ref_length + 26)), (10, WINDOW_SIZE[1] - 26)
         pg.draw.line(self.screen, color, start_pos, end_pos)
         pg.draw.line(self.screen, color, start_pos, (start_pos[0] + 10, start_pos[1]))
         pg.draw.line(self.screen, color, end_pos, (end_pos[0] + 10, end_pos[1]))
@@ -186,4 +219,37 @@ class Gui:
         scale_ua_text = self.cfont.render(f'{scale_ua:,.3f} UA', True, color)
         self.screen.blit(scale_text, (start_pos[0], start_pos[1] - 35,))
         self.screen.blit(scale_ua_text, (start_pos[0], start_pos[1] - 18,))
+
+    def draw_focus_info(self):
+        label_text = "Focus: "
+        focus_text = str(GL.FOCUS_BODY.name) if GL.FOCUS_BODY is not None else 'None'
+        focus_color = GL.FOCUS_BODY.color if GL.FOCUS_BODY is not None else (210, 210, 210,)
+        focus_render = self.bfont.render(focus_text, True, focus_color)
+        label_render = self.cfont.render(label_text, True, (210, 210, 210,))
+        focus_rect = focus_render.get_rect()
+        label_pos = ( WINDOW_SIZE[0] - 12 - focus_rect[2] - label_render.get_rect()[2] , 16)
+        focus_pos = (WINDOW_SIZE[0] - 12 - focus_rect[2], 15)
+        self.screen.blit(label_render, label_pos)
+        self.screen.blit(focus_render, focus_pos)
+
+    def draw_music_info(self):
+        if GL.PLAY_SOUND:
+            rtext = self.cfont.render('Music: On', True, (210, 210, 210))
+        else:
+            rtext = self.cfont.render('Music: Off', True, (210, 210, 210))
+        self.screen.blit(rtext, (10, WINDOW_SIZE[1] - 18))
+
+    def change_music_state(self):
+        GL.PLAY_SOUND = not GL.PLAY_SOUND
+        if GL.PLAY_SOUND:
+            pg.mixer.music.play(-1)
+        else:
+            pg.mixer.music.stop()
+
+    def capture_img(self):
+        path = r'E:\pgimg\{0}.png'
+        pg.image.save(self.screen, path.format(self.capture_counter))
+        self.capture_counter += 1
+
+
 

@@ -7,8 +7,8 @@ from constants import *
 
 def main():
     # bodies = generate_solar_system()
-    bodies = generate_pluto_system()
-    # bodies = generate_dual_stars_system()
+    # bodies = generate_pluto_system()
+    bodies = generate_dual_stars_system()
     g = Gui(bodies)
     g.start()
 
