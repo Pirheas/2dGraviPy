@@ -37,8 +37,8 @@ class Gui:
             p = Path(__file__).parent.parent / 'music' / 'AmbiantSpace.ogg'
             pg.mixer.music.load(str(p))
             pg.mixer.music.set_volume(0.6)
-        except:
-            print("Oh oh", file=sys.stderr)
+        except Exception as ex:
+            print("Unable to lad music: ", str(ex), file=sys.stderr)
 
     def start(self) -> None:
         global DRAW_GHOST_LINE
@@ -92,7 +92,7 @@ class Gui:
             self.draw_focus_info()
             self.draw_music_info()
             pg.display.flip()
-            self.capture_img()
+            # self.capture_img()
             self.clock.tick(FRAME_RATE)
         pg.quit()
 
