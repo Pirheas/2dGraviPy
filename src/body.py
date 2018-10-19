@@ -31,9 +31,12 @@ class Body:
         y = (self.posy - other.posy) ** 2
         return (x + y) ** 0.5
 
+    def _compute_square_distance(self, other: 'Body') -> float:
+        return (self.posx - other.posx) ** 2 + (self.posy - other.posy) ** 2
+
     def compute_gravity(self, other: 'Body') -> None:
-        distance = self._compute_distance(other)
-        force = (self.Gmass * other.mass) / (distance ** 2)
+        sq_distance = self._compute_square_distance(other)
+        force = (self.Gmass * other.mass) / sq_distance
         theta = math.atan2(other.posy - self.posy, other.posx - self.posx)
         dx = (force * math.cos(theta))
         dy = force * math.sin(theta)
