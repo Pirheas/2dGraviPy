@@ -4,14 +4,14 @@ G = 6.67408e-11
 # Astronomical unit (in meter)
 UA = 149_597_870_700
 
-PRINT_DEBUG = False
+ENABLE_PROFILING = False  # Make the program much slower when enabled
 
 MAX_PREV_POS = 1000
 DRAW_GHOST_LINE = False
 DRAW_GRAVITATIONAL_FORCES = False
 
 PYGAME_INIT = False
-FRAME_RATE = 60
+FRAME_RATE = 60.0
 
 
 STRING_COLORS = {

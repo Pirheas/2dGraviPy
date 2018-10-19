@@ -8,7 +8,7 @@ from typing import Union, Tuple
 class Body:
 
     def __init__(self, name: str, mass: float, posx: float, posy: float, velx: float, vely: float,
-                 color: Union[str, Tuple[int, int , int], None], radius:int=2):
+                 color: Union[str, Tuple[int, int, int], None], radius: int=2):
         self.name = name
         self.mass = mass
         self.posx = posx
@@ -20,9 +20,11 @@ class Body:
         self.velocity_change = []
         self.radius = radius
         self.selected = False
+        self.Gmass = G * self.mass
 
     def __str__(self) -> str:
-        return f"[{self.name}] position: ({self.posx / UA}, {self.posy / UA}), velocity: ({self.velocity.x} km/s, {self.velocity.y} km/s)"
+        return f"[{self.name}] position: ({self.posx / UA}, {self.posy / UA}), " \
+               f"velocity: ({self.velocity.x} km/s, {self.velocity.y} km/s)"
 
     def _compute_distance(self, other: 'Body') -> float:
         x = (self.posx - other.posx) ** 2
@@ -31,18 +33,14 @@ class Body:
 
     def compute_gravity(self, other: 'Body') -> None:
         distance = self._compute_distance(other)
-        force = G * (self.mass * other.mass) / (distance ** 2)
+        force = (self.Gmass * other.mass) / (distance ** 2)
         theta = math.atan2(other.posy - self.posy, other.posx - self.posx)
         dx = (force * math.cos(theta))
         dy = force * math.sin(theta)
-        if PRINT_DEBUG:
-            print(f"'{other.name}' applies a force: [{force}]({dx}, {dy})  on '{self.name}'")
         self._forces_applied.append(Vector(dx, dy))
+        other._forces_applied.append(Vector(-1 * dx, -1 * dy))
 
-    def update_positon(self, save_prev_pos:bool=False) -> None:
-        if PRINT_DEBUG:
-            print(f"UPDATE POSITION: {self.name}")
-            print(str(self))
+    def update_positon(self, save_prev_pos: bool=False) -> None:
         if save_prev_pos:
             self._previous_pos.append((self.posx, self.posy))
             if len(self._previous_pos) > MAX_PREV_POS:
@@ -55,17 +53,14 @@ class Body:
         self._forces_applied = []
         self.posx += self.velocity.x * GL.INNER_TIMESCALE
         self.posy += self.velocity.y * GL.INNER_TIMESCALE
-        if PRINT_DEBUG:
-            print("NEW POSITION:", str(self))
-
 
     @property
     def color(self) -> Tuple[int, int, int]:
         return self._color
 
     @color.setter
-    def color(self, value: Union[str, Tuple[int, int , int], None]):
-        default_value =  STRING_COLORS['WHITE']
+    def color(self, value: Union[str, Tuple[int, int, int], None]):
+        default_value = STRING_COLORS['WHITE']
         if value is None:
             self._color = default_value
         elif isinstance(value, str):

@@ -22,10 +22,11 @@ python main.py
 |------------|---------|
 |      +     | Speed up|
 |      -     | Speed down|
-|      F     | Draw line of force applied on each body|
-|      G     | Draw the ghost of the bodies (prefious positions)|
-|      S     | Show the scale in the bottom left corner |
+|      F     | Draw lines of force applied on each body|
+|      G     | Draw the ghost of the bodies (previous positions)|
+|      S     | Toggle the scale visibility in the bottom left corner |
 |      V     | Toggle music |
+|      U     | Set current scale to 1 UA|
 | Left click | Select an object and show the info about it |
 | Right click| Focus the view on the clicked body|
 | Mouse wheel| Zoom (in/out)|

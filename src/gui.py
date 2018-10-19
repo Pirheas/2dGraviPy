@@ -1,10 +1,11 @@
 import sys
 import math
 import pygame as pg
+from pathlib import Path
 from constants import *
 from globals import GL
 from body import Body
-from typing import  List, Tuple, Union
+from typing import List, Tuple, Union
 
 if not PYGAME_INIT:
     PYGAME_INIT = True
@@ -26,19 +27,26 @@ class Gui:
         self.capture_counter = 0
         self.load_music()
         self.bcolor = STRING_COLORS['BLACK']
-        self.cfont = pg.font.SysFont("calibri", 13)
-        self.bfont = pg.font.SysFont("calibri", 17, bold=True)
-        self.efont = pg.font.SysFont("calibri", 26)
+        self.load_fonts()
         self.speed_text = self._compute_speed_text()
 
     def load_music(self):
         try:
-            from pathlib import Path
             p = Path(__file__).parent.parent / 'music' / 'AmbiantSpace.ogg'
             pg.mixer.music.load(str(p))
             pg.mixer.music.set_volume(0.6)
         except Exception as ex:
             print("Unable to lad music: ", str(ex), file=sys.stderr)
+
+    def load_fonts(self):
+        try:
+            fpath = Path(__file__).parent.parent / 'fonts'
+            regular = str(fpath / 'Roboto-Regular.ttf')
+            bold = str(fpath / 'Roboto-Bold.ttf')
+            self.rfont = pg.font.Font(regular, 14)
+            self.bfont = pg.font.Font(bold, 17, bold=True)
+        except Exception as ex:
+            print('Unable to load fonts:', str(ex))
 
     def start(self) -> None:
         global DRAW_GHOST_LINE
@@ -53,40 +61,44 @@ class Gui:
                     height = max(600, height)
                     self.screen = pg.display.set_mode((width, height), pg.RESIZABLE)
                 elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_SPACE:
+                    ukeycode = str(event.unicode).upper()
+                    if event.key == pg.K_ESCAPE:
+                        self.exit = True
+                    elif event.key == pg.K_SPACE:
                         for body in self.bodies:
                             print(str(body))
-                    elif event.key == pg.K_g:
+                    elif ukeycode == 'G':
                         DRAW_GHOST_LINE = not DRAW_GHOST_LINE
-                    elif event.key == pg.K_f:
+                    elif ukeycode == 'F':
                         DRAW_GRAVITATIONAL_FORCES = not DRAW_GRAVITATIONAL_FORCES
-                    elif event.key == pg.K_PLUS or event.key == pg.K_KP_PLUS:
+                    elif ukeycode == '+':
                         self.timescale_faster()
-                    elif event.key == pg.K_MINUS or event.key == pg.K_KP_MINUS:
+                    elif ukeycode == '-':
                         self.timescale_slower()
-                    elif event.key == pg.K_s:
+                    elif ukeycode == 'S':
                         GL.DRAW_SCALE = not GL.DRAW_SCALE
-                    elif event.key == pg.K_v:
+                    elif ukeycode == 'V':
                         self.change_music_state()
+                    elif ukeycode == 'U':
+                        GL.SCALE = 250 / UA
                 elif event.type == pg.MOUSEBUTTONUP:
                     clickpos = pg.mouse.get_pos()
-                    if event.button == 1: # Left click
+                    if event.button == 1:  # Left click
                         self.select_body(clickpos[0], clickpos[1])
-                    elif event.button == 3: # Right click
+                    elif event.button == 3:  # Right click
                         self.center_body(clickpos[0], clickpos[1])
-                    elif event.button == 4: # Wheel Down
+                    elif event.button == 4:  # Wheel Down
                         if (1 / GL.SCALE) > 30_000:
                             GL.SCALE *= 1.1
-                    elif event.button == 5: # Wheel Upd
+                    elif event.button == 5:  # Wheel Upd
                         if (1 / GL.SCALE) < 100 * UA / 250:
                             GL.SCALE *= 0.9
 
             self.selected_body = None
             for fc in range(GL.FRAME_COMPUTE):
                 for i in range(0, len(self.bodies)):
-                    for j in range(0, len(self.bodies)):
-                        if i != j:
-                            self.bodies[i].compute_gravity(self.bodies[j])
+                    for j in range(i + 1, len(self.bodies)):
+                        self.bodies[i].compute_gravity(self.bodies[j])
                 for body in self.bodies:
                     body.update_positon(fc == GL.FRAME_COMPUTE - 1)
             self.screen.fill(self.bcolor)
@@ -102,11 +114,11 @@ class Gui:
             self._draw_speed_text()
             self.draw_focus_info()
             self.draw_music_info()
+            self.draw_fps()
             pg.display.flip()
             # self.capture_img()
             self.clock.tick(FRAME_RATE)
         pg.quit()
-
 
     def select_body(self, x: int, y: int):
         for body in self.bodies:
@@ -157,16 +169,16 @@ class Gui:
                 pg.draw.aaline(self.screen, (255, 255, 255), p1, p2)
 
     def _draw_speed_text(self):
-        text = self.cfont.render(self.speed_text, True, (210, 210, 210))
+        text = self.rfont.render(self.speed_text, True, (210, 210, 210))
         self.screen.blit(text, (10, 10,))
 
-    def draw_ngon(self, n: int, radius: int, position: Tuple[float, float], tiltAngle: float):
+    def draw_ngon(self, n: int, radius: int, position: Tuple[float, float], tilt_angle: float):
         pi2 = 2 * math.pi
         color = (255, 255, 255)
         pts = []
         for i in range(n):
-            x = position[0] + radius * math.cos(tiltAngle + pi2 * i / n)
-            y = position[1] + radius * math.sin(tiltAngle + pi2 * i / n)
+            x = position[0] + radius * math.cos(tilt_angle + pi2 * i / n)
+            y = position[1] + radius * math.sin(tilt_angle + pi2 * i / n)
             pts.append([int(x), int(y)])
         pg.draw.lines(self.screen, color, True, pts)
 
@@ -188,7 +200,6 @@ class Gui:
         speed_mult = int(round(GL.TIMESCALE * FRAME_RATE))
         return f"Speed: {speed_mult:,}X"
 
-
     def _real_to_screen(self, x: float, y: float) -> Tuple[int, int]:
         relative_pos = (0, 0,)
         if GL.FOCUS_BODY is not None:
@@ -202,13 +213,13 @@ class Gui:
     def print_body_properties(self):
         body = self.selected_body  # type: Body
         bname = self.bfont.render(body.name, True, body.color)
-        masstxt = self.cfont.render(f'Mass: {body.mass} Kg', True, (210, 210, 210))
-        xpostxt = self.cfont.render(f'Position X: {body.posx}', True, (210, 210, 210))
-        ypostxt = self.cfont.render(f'Position Y: {body.posy}', True, (210, 210, 210))
-        xvelo = self.cfont.render(f'Velocity X: {body.velocity.x:.3f} m/s', True, (210, 210, 210))
-        yvelo = self.cfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, (210, 210, 210))
+        masstxt = self.rfont.render(f'Mass: {body.mass} Kg', True, (210, 210, 210))
+        xpostxt = self.rfont.render(f'Position X: {body.posx}', True, (210, 210, 210))
+        ypostxt = self.rfont.render(f'Position Y: {body.posy}', True, (210, 210, 210))
+        xvelo = self.rfont.render(f'Velocity X: {body.velocity.x:.3f} m/s', True, (210, 210, 210))
+        yvelo = self.rfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, (210, 210, 210))
         velocity_total = (body.velocity.x ** 2 + body.velocity.y ** 2) ** 0.5
-        totvelo = self.cfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, (210, 210, 210))
+        totvelo = self.rfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, (210, 210, 210))
         self.screen.blit(bname, (10, 28,))
         self.screen.blit(masstxt, (10, 49,))
         self.screen.blit(xpostxt, (10, 66,))
@@ -226,8 +237,8 @@ class Gui:
         pg.draw.line(self.screen, color, end_pos, (end_pos[0] + 10, end_pos[1]))
         scale = (ref_length / GL.SCALE) / 1000
         scale_ua = (scale * 1000) / UA
-        scale_text = self.cfont.render(f'{scale:,.4f} Km', True, color)
-        scale_ua_text = self.cfont.render(f'{scale_ua:,.3f} UA', True, color)
+        scale_text = self.rfont.render(f'{scale:,.4f} Km', True, color)
+        scale_ua_text = self.rfont.render(f'{scale_ua:,.3f} UA', True, color)
         self.screen.blit(scale_text, (start_pos[0], start_pos[1] - 35,))
         self.screen.blit(scale_ua_text, (start_pos[0], start_pos[1] - 18,))
 
@@ -236,19 +247,25 @@ class Gui:
         focus_text = str(GL.FOCUS_BODY.name) if GL.FOCUS_BODY is not None else 'None'
         focus_color = GL.FOCUS_BODY.color if GL.FOCUS_BODY is not None else (210, 210, 210,)
         focus_render = self.bfont.render(focus_text, True, focus_color)
-        label_render = self.cfont.render(label_text, True, (210, 210, 210,))
+        label_render = self.rfont.render(label_text, True, (210, 210, 210,))
         focus_rect = focus_render.get_rect()
-        label_pos = (self.screen.get_width() - 12 - focus_rect[2] - label_render.get_rect()[2] , 16)
-        focus_pos = (self.screen.get_width() - 12 - focus_rect[2], 15)
+        label_pos = (self.screen.get_width() - 12 - focus_rect[2] - label_render.get_rect()[2], 16)
+        focus_pos = (self.screen.get_width() - 12 - focus_rect[2], 14)
         self.screen.blit(label_render, label_pos)
         self.screen.blit(focus_render, focus_pos)
 
     def draw_music_info(self):
         if GL.PLAY_SOUND:
-            rtext = self.cfont.render('Music: On', True, (210, 210, 210))
+            rtext = self.rfont.render('Music: On', True, (210, 210, 210))
         else:
-            rtext = self.cfont.render('Music: Off', True, (210, 210, 210))
+            rtext = self.rfont.render('Music: Off', True, (210, 210, 210))
         self.screen.blit(rtext, (10, self.screen.get_height() - 18))
+
+    def draw_fps(self):
+        fps = self.rfont.render(f'{float(self.clock.get_fps()):.2f}fps', True, (210, 210, 210))
+        fps_rect = fps.get_rect()
+        fps_pos = (self.screen.get_width() - 10 - fps_rect[2], 42)
+        self.screen.blit(fps, fps_pos)
 
     def change_music_state(self):
         GL.PLAY_SOUND = not GL.PLAY_SOUND
