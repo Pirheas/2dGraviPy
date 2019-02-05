@@ -1,56 +1,46 @@
 import sys
 import math
+import colors
 import pygame as pg
-from pathlib import Path
 from constants import *
 from globals import GL
 from body import Body
 from typing import List, Tuple, Union
 
-if not PYGAME_INIT:
-    PYGAME_INIT = True
-    pg.init()
-    pg.display.set_caption('2dGraviPy')
-
-DEFAULT_WINDOW_SIZE = (1300, 1000,)
-DRAW_GHOST_LINE = False
-
 
 class Gui:
 
-    def __init__(self, bodies: List[Body]):
+    def __init__(self, bodies: List[Body], screen):
         self.exit = False
-        self.screen = pg.display.set_mode(DEFAULT_WINDOW_SIZE, pg.RESIZABLE)
+        self.screen = screen
         self.clock = pg.time.Clock()
         self.bodies = bodies
         self.selected_body = None
         self.capture_counter = 0
         self.load_music()
-        self.bcolor = STRING_COLORS['BLACK']
+        self.bcolor = colors.BLACK
+        self.rfont = self.bfont = None
         self.load_fonts()
         self.speed_text = self._compute_speed_text()
 
-    def load_music(self):
+    @staticmethod
+    def load_music():
         try:
-            p = Path(__file__).parent.parent / 'music' / 'AmbiantSpace.ogg'
-            pg.mixer.music.load(str(p))
-            pg.mixer.music.set_volume(0.6)
+            pg.mixer.music.load(str(MAIN_MUSIC))
+            pg.mixer.music.set_volume(0.65)
         except Exception as ex:
-            print("Unable to lad music: ", str(ex), file=sys.stderr)
+            print("Unable to load music: ", str(ex), file=sys.stderr)
 
     def load_fonts(self):
         try:
-            fpath = Path(__file__).parent.parent / 'fonts'
-            regular = str(fpath / 'Roboto-Regular.ttf')
-            bold = str(fpath / 'Roboto-Bold.ttf')
-            self.rfont = pg.font.Font(regular, 14)
-            self.bfont = pg.font.Font(bold, 17, bold=True)
+            self.rfont = pg.font.Font(str(ROBOTO_FONT_PATH), 14)
+            self.bfont = pg.font.Font(str(ROBOTO_BOLD_FONT_PATH), 17, bold=True)
         except Exception as ex:
-            print('Unable to load fonts:', str(ex))
+            print('Unable to load fonts:', str(ex), file=sys.stderr)
 
     def start(self) -> None:
-        global DRAW_GHOST_LINE
-        global DRAW_GRAVITATIONAL_FORCES
+        if GL.PLAY_SOUND:
+            pg.mixer.music.play(-1)
         while not self.exit:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -68,9 +58,9 @@ class Gui:
                         for body in self.bodies:
                             print(str(body))
                     elif ukeycode == 'G':
-                        DRAW_GHOST_LINE = not DRAW_GHOST_LINE
+                        GL.DRAW_GHOST_LINE = not GL.DRAW_GHOST_LINE
                     elif ukeycode == 'F':
-                        DRAW_GRAVITATIONAL_FORCES = not DRAW_GRAVITATIONAL_FORCES
+                        GL.DRAW_GRAVITATIONAL_FORCES = not GL.DRAW_GRAVITATIONAL_FORCES
                     elif ukeycode == '+':
                         self.timescale_faster()
                     elif ukeycode == '-':
@@ -104,9 +94,9 @@ class Gui:
             self.screen.fill(self.bcolor)
             if GL.DRAW_SCALE:
                 self.draw_scale()
-            if DRAW_GHOST_LINE:
+            if GL.DRAW_GHOST_LINE:
                 self._draw_ghost()
-            if DRAW_GRAVITATIONAL_FORCES:
+            if GL.DRAW_GRAVITATIONAL_FORCES:
                 self._draw_gravitational_forces()
             self._draw_bodies()
             if self.selected_body:
@@ -118,7 +108,6 @@ class Gui:
             pg.display.flip()
             # self.capture_img()
             self.clock.tick(FRAME_RATE)
-        pg.quit()
 
     def select_body(self, x: int, y: int):
         for body in self.bodies:
@@ -169,7 +158,7 @@ class Gui:
                 pg.draw.aaline(self.screen, (255, 255, 255), p1, p2)
 
     def _draw_speed_text(self):
-        text = self.rfont.render(self.speed_text, True, (210, 210, 210))
+        text = self.rfont.render(self.speed_text, True, colors.DEFAULT_FONT_COLOR)
         self.screen.blit(text, (10, 10,))
 
     def draw_ngon(self, n: int, radius: int, position: Tuple[float, float], tilt_angle: float):
@@ -196,7 +185,8 @@ class Gui:
         GL.update_speed()
         self.speed_text = self._compute_speed_text()
 
-    def _compute_speed_text(self) -> str:
+    @staticmethod
+    def _compute_speed_text() -> str:
         speed_mult = int(round(GL.TIMESCALE * FRAME_RATE))
         return f"Speed: {speed_mult:,}X"
 
@@ -208,18 +198,18 @@ class Gui:
         yp = int((y - relative_pos[1]) * GL.SCALE)
         xp += self.screen.get_width() // 2
         yp += self.screen.get_height() // 2
-        return (xp, yp,)
+        return xp, yp
 
     def print_body_properties(self):
         body = self.selected_body  # type: Body
         bname = self.bfont.render(body.name, True, body.color)
-        masstxt = self.rfont.render(f'Mass: {body.mass} Kg', True, (210, 210, 210))
-        xpostxt = self.rfont.render(f'Position X: {body.posx}', True, (210, 210, 210))
-        ypostxt = self.rfont.render(f'Position Y: {body.posy}', True, (210, 210, 210))
-        xvelo = self.rfont.render(f'Velocity X: {body.velocity.x:.3f} m/s', True, (210, 210, 210))
-        yvelo = self.rfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, (210, 210, 210))
+        masstxt = self.rfont.render(f'Mass: {body.mass} Kg', True, colors.DEFAULT_FONT_COLOR)
+        xpostxt = self.rfont.render(f'Position X: {body.posx}', True, colors.DEFAULT_FONT_COLOR)
+        ypostxt = self.rfont.render(f'Position Y: {body.posy}', True, colors.DEFAULT_FONT_COLOR)
+        xvelo = self.rfont.render(f'Velocity X: {body.velocity.x:.3f} m/s', True, colors.DEFAULT_FONT_COLOR)
+        yvelo = self.rfont.render(f'Velocity Y: {body.velocity.y:.3f} m/s', True, colors.DEFAULT_FONT_COLOR)
         velocity_total = (body.velocity.x ** 2 + body.velocity.y ** 2) ** 0.5
-        totvelo = self.rfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, (210, 210, 210))
+        totvelo = self.rfont.render(f'Velocity Total: {velocity_total:.3f} m/s', True, colors.DEFAULT_FONT_COLOR)
         self.screen.blit(bname, (10, 28,))
         self.screen.blit(masstxt, (10, 49,))
         self.screen.blit(xpostxt, (10, 66,))
@@ -230,24 +220,23 @@ class Gui:
 
     def draw_scale(self):
         ref_length = 250
-        color = (210, 210, 210)
         start_pos, end_pos = (10, self.screen.get_height() - (ref_length + 26)), (10, self.screen.get_height() - 26)
-        pg.draw.line(self.screen, color, start_pos, end_pos)
-        pg.draw.line(self.screen, color, start_pos, (start_pos[0] + 10, start_pos[1]))
-        pg.draw.line(self.screen, color, end_pos, (end_pos[0] + 10, end_pos[1]))
+        pg.draw.line(self.screen, colors.DEFAULT_FONT_COLOR, start_pos, end_pos)
+        pg.draw.line(self.screen, colors.DEFAULT_FONT_COLOR, start_pos, (start_pos[0] + 10, start_pos[1]))
+        pg.draw.line(self.screen, colors.DEFAULT_FONT_COLOR, end_pos, (end_pos[0] + 10, end_pos[1]))
         scale = (ref_length / GL.SCALE) / 1000
         scale_ua = (scale * 1000) / UA
-        scale_text = self.rfont.render(f'{scale:,.4f} Km', True, color)
-        scale_ua_text = self.rfont.render(f'{scale_ua:,.3f} UA', True, color)
+        scale_text = self.rfont.render(f'{scale:,.4f} Km', True, colors.DEFAULT_FONT_COLOR)
+        scale_ua_text = self.rfont.render(f'{scale_ua:,.3f} UA', True, colors.DEFAULT_FONT_COLOR)
         self.screen.blit(scale_text, (start_pos[0], start_pos[1] - 35,))
         self.screen.blit(scale_ua_text, (start_pos[0], start_pos[1] - 18,))
 
     def draw_focus_info(self):
         label_text = "Focus: "
         focus_text = str(GL.FOCUS_BODY.name) if GL.FOCUS_BODY is not None else 'None'
-        focus_color = GL.FOCUS_BODY.color if GL.FOCUS_BODY is not None else (210, 210, 210,)
+        focus_color = GL.FOCUS_BODY.color if GL.FOCUS_BODY is not None else colors.DEFAULT_FONT_COLOR
         focus_render = self.bfont.render(focus_text, True, focus_color)
-        label_render = self.rfont.render(label_text, True, (210, 210, 210,))
+        label_render = self.rfont.render(label_text, True, colors.DEFAULT_FONT_COLOR)
         focus_rect = focus_render.get_rect()
         label_pos = (self.screen.get_width() - 12 - focus_rect[2] - label_render.get_rect()[2], 16)
         focus_pos = (self.screen.get_width() - 12 - focus_rect[2], 14)
@@ -256,18 +245,19 @@ class Gui:
 
     def draw_music_info(self):
         if GL.PLAY_SOUND:
-            rtext = self.rfont.render('Music: On', True, (210, 210, 210))
+            rtext = self.rfont.render('Music: On', True, colors.DEFAULT_FONT_COLOR)
         else:
-            rtext = self.rfont.render('Music: Off', True, (210, 210, 210))
+            rtext = self.rfont.render('Music: Off', True, colors.DEFAULT_FONT_COLOR)
         self.screen.blit(rtext, (10, self.screen.get_height() - 18))
 
     def draw_fps(self):
-        fps = self.rfont.render(f'{float(self.clock.get_fps()):.2f}fps', True, (210, 210, 210))
+        fps = self.rfont.render(f'{float(self.clock.get_fps()):.2f}fps', True, colors.DEFAULT_FONT_COLOR)
         fps_rect = fps.get_rect()
         fps_pos = (self.screen.get_width() - 10 - fps_rect[2], 42)
         self.screen.blit(fps, fps_pos)
 
-    def change_music_state(self):
+    @staticmethod
+    def change_music_state():
         GL.PLAY_SOUND = not GL.PLAY_SOUND
         if GL.PLAY_SOUND:
             pg.mixer.music.play(-1)
@@ -278,6 +268,3 @@ class Gui:
         path = r'E:\pgimg\{0}.png'
         pg.image.save(self.screen, path.format(self.capture_counter))
         self.capture_counter += 1
-
-
-

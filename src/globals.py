@@ -22,12 +22,14 @@ class Globals:
             (2_500_000, 64),
             (5_000_000, 72),
             (10_000_000, 86),
-            (25_000_000, 96),
+            (25_000_000, 102),
             (50_000_000, 116)
         ]
         self.CURRENT_SPEED = len(self.SPEEDS) // 2
         self.FOCUS_BODY = None
-        self.PLAY_SOUND = False
+        self.PLAY_SOUND = True
+        self.DRAW_GHOST_LINE = False
+        self.DRAW_GRAVITATIONAL_FORCES = False
         self.update_speed()
 
     def update_speed(self) -> None:

@@ -1,24 +1,45 @@
+import pygame as pg
 from typing import List
 from body import Body
 from gui import Gui
 from globals import GL
-from constants import *
+from constants import UA, DEFAULT_WINDOW_SIZE, ENABLE_PROFILING, DEFAULT_WINDOW_MENU_SIZE
+from menu import show_menu, MenuChoice
 
 
 def main():
-    bodies = generate_solar_system()
-    # bodies = generate_pluto_system()
-    # bodies = generate_dual_stars_system()
-    g = Gui(bodies)
-    g.start()
+    pg.init()
+    pg.display.set_caption('2dGraviPy')
+    quit_program = False
+    while not quit_program:
+        screen = pg.display.set_mode(DEFAULT_WINDOW_MENU_SIZE, pg.RESIZABLE | pg.DOUBLEBUF)
+        choice = show_menu(screen)
+        pg.mixer.music.stop()
+        if choice != MenuChoice.NOTHING:
+            screen = pg.display.set_mode(DEFAULT_WINDOW_SIZE, pg.RESIZABLE | pg.DOUBLEBUF)
+            bodies = None
+            if choice == MenuChoice.SOLAR_SYSTEM:
+                bodies = generate_solar_system()
+            elif choice == MenuChoice.PLUTO_SYSTEM:
+                bodies = generate_pluto_system()
+            elif choice == MenuChoice.BINARY_SYSTEM:
+                bodies = generate_dual_stars_system()
+            g = Gui(bodies, screen)
+            g.start()
+        else:
+            quit_program = True
+    pg.quit()
 
 
 def generate_solar_system() -> List[Body]:
+    GL.SCALE = 90 / UA
+    GL.CURRENT_SPEED = len(GL.SPEEDS) // 2
+    GL.update_speed()
     return [
-        Body('Sun', 1.9885e30, 0, 0, -12.5, 0, 'YELLOW', 8),
+        Body('Sun', 1.9885e30, 0, 0, -12.5, 0, 'YELLOW', 7),
         Body('Earth', 5.9736e24, UA, 0, 0, -29_763, 'LIGHT_BLUE', 3),
         Body('Mars', 641.85e21, -227_936_637_000, 0, 0, 24_077, 'RED'),
-        Body('Jupiter', 1.8986e27, 0, 778_412_027_000, 13_057.2, 0, 'ORANGE', 6),
+        Body('Jupiter', 1.8986e27, 0, 778_412_027_000, 13_057.2, 0, 'ORANGE', 5),
         Body('Venus', 4.8685e24, 0, -108_208_930_000, -35_020.0, 0, 'PINK', 3),
         Body('Mercury', 3.3011e23, 57_909_176_000, 0, 0, -47_360, 'LIGHT_GREEN'),
         Body('Moon', 7.3476731e22, UA, -384_400_000, -1_022, -29_763, 'LIGHT_GREY', 1),

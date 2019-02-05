@@ -1,4 +1,5 @@
 import math
+import colors
 from constants import *
 from globals import GL
 from vector import Vector
@@ -63,14 +64,11 @@ class Body:
 
     @color.setter
     def color(self, value: Union[str, Tuple[int, int, int], None]):
-        default_value = STRING_COLORS['WHITE']
+        default_value = colors.WHITE
         if value is None:
             self._color = default_value
         elif isinstance(value, str):
-            if value.upper() in STRING_COLORS:
-                self._color = STRING_COLORS[value.upper()]
-            else:
-                self._color = default_value
+            self._color = getattr(colors, value.upper(), default_value)
         elif isinstance(value, tuple):
             self.color = value
         else:
